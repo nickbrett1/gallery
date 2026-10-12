@@ -60,6 +60,13 @@ describe("search screen", () => {
     expect(screen.getByAltText(/page 1 art/i)).toHaveAttribute("src", "/thumb/1");
   });
 
+  it("badges each result with its kind (text, concept, art)", () => {
+    const { container } = render(Page, { data: pageData({ q: "wander", grouped }) });
+    expect(container.querySelector('[data-kind="text"]')).not.toBeNull();
+    expect(container.querySelector('[data-kind="concept"]')).not.toBeNull();
+    expect(container.querySelector('[data-kind="image"]')).not.toBeNull();
+  });
+
   it("surfaces a data error instead of a blank page", () => {
     render(Page, { data: pageData({ error: "ENOENT: no such file" }) });
     expect(screen.getByText(/Data unavailable/)).toBeInTheDocument();

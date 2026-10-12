@@ -1,8 +1,11 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import Database from "better-sqlite3";
+
 import { embedQuery } from "../src/lib/server/embed.js";
 import { createRuntime } from "../src/lib/server/runtime.js";
+import { SchemaMismatchError } from "../src/lib/server/schema.js";
 import { makeFixture } from "./fixtures.js";
 
 afterEach(() => {
@@ -49,5 +52,19 @@ describe("createRuntime startup guards", () => {
     await expect(
       createRuntime({ dbPath: "/nonexistent/reader.db", indexBackend: "lancedb" }),
     ).rejects.toThrow();
+  });
+
+  it("fails startup with SchemaMismatchError on a newer schema version", async () => {
+    const fx = makeFixture();
+    // Simulate a record written by a newer reader (v99 != SCHEMA_VERSION).
+    const w = new Database(fx.dbPath);
+    w.prepare("UPDATE schema_version SET version = 99").run();
+    w.close();
+
+    await expect(
+      createRuntime({ dbPath: fx.dbPath, indexDir: `${fx.dir}/index`, indexBackend: "lancedb" }),
+    ).rejects.toThrow(SchemaMismatchError);
+
+    fx.cleanup();
   });
 });

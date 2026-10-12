@@ -138,6 +138,23 @@ button,
   color: var(--muted);
   margin-right: 6px;
 }
+.pill.kind {
+  font-weight: 600;
+  border-color: var(--line);
+}
+.pill.kind-text {
+  border-color: #2f6b4f;
+  color: #9fe6c0;
+}
+.pill.kind-concept {
+  border-color: #5a4a8a;
+  color: #cdbcff;
+}
+.pill.kind-image {
+  border-color: #7a5a2a;
+  color: #ffd9a0;
+}
+
 .quote {
   margin: 8px 0 0;
   padding-left: 10px;

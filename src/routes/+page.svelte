@@ -5,6 +5,12 @@
     { value: "concept", label: "Concepts" },
     { value: "image", label: "Art" },
   ];
+  // One honest label per index kind. The kind filter mixes text + art (wanted
+  // on search); the badge is how a mixed result list stays legible.
+  const kindLabels = { text: "text", concept: "concept", image: "art" };
+  function kindLabel(kind) {
+    return kindLabels[kind] || kind || "result";
+  }
 </script>
 
 <h1>Search</h1>
@@ -24,7 +30,7 @@
   </div>
   <div class="filters">
     <span>Kinds:</span>
-    {#each allKinds as k}
+    {#each allKinds as k (k.value)}
       <label>
         <input
           type="checkbox"
@@ -54,11 +60,14 @@
     <div class="notice">No results for “{data.q}”.</div>
   {/if}
 
-  {#each data.grouped.works as work}
+  {#each data.grouped.works as work (work.workKey)}
     <h2>{work.title || work.workKey}</h2>
-    {#each work.hits as hit}
+    {#each work.hits as hit (hit.indexId ?? hit.href)}
       <article class="card">
-        <h3><a href={hit.href}>{hit.title || hit.workKey} — page {hit.pageNo}</a></h3>
+        <h3>
+          <span class="pill kind kind-{hit.kind}" data-kind={hit.kind}>{kindLabel(hit.kind)}</span>
+          <a href={hit.href}>{hit.title || hit.workKey} — page {hit.pageNo}</a>
+        </h3>
         <div class="cite">
           {hit.workKey} · chars {hit.startOffset}–{hit.endOffset}
           {#if hit.score != null}· score {Number(hit.score).toFixed(3)}{/if}
@@ -70,9 +79,12 @@
 
   {#if data.grouped.concepts.length}
     <h2>Concepts</h2>
-    {#each data.grouped.concepts as c}
+    {#each data.grouped.concepts as c (c.conceptId ?? c.href)}
       <article class="card">
-        <h3><a href={c.href}>{c.name}</a> <span class="pill">{c.type}</span></h3>
+        <h3>
+          <span class="pill kind kind-concept" data-kind="concept">concept</span>
+          <a href={c.href}>{c.name}</a> <span class="pill">{c.type}</span>
+        </h3>
         {#if c.description}<p class="muted">{c.description}</p>{/if}
       </article>
     {/each}
@@ -81,10 +93,13 @@
   {#if data.grouped.images.length}
     <h2>Art</h2>
     <div class="grid">
-      {#each data.grouped.images as img}
+      {#each data.grouped.images as img (img.imageId)}
         <a class="tile" href={img.href}>
           <img src={`/thumb/${img.imageId}`} alt={`page ${img.pageNo} art`} loading="lazy" />
-          <div class="meta">page {img.pageNo} · {img.kindLabel}</div>
+          <div class="meta">
+            <span class="pill kind kind-image" data-kind="image">art</span>
+            page {img.pageNo} · {img.kindLabel}
+          </div>
         </a>
       {/each}
     </div>
