@@ -42,6 +42,6 @@
   },
   "dependencies": {
     "@lancedb/lancedb": "0.40.0",
-    "better-sqlite3": "13.0.3"
+    "better-sqlite3": "12.11.1"
   }
 }
