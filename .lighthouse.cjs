@@ -16,6 +16,12 @@ module.exports = {
       startServerReadyTimeout: 30000,
       url: ["http://localhost:3000/"],
       numberOfRuns: 1,
+      settings: {
+        // The CI step runs as root inside the container, so Chrome refuses to
+        // start its sandbox ("Running as root without --no-sandbox is not
+        // supported").
+        chromeFlags: "--disable-gpu --no-sandbox",
+      },
     },
     upload: {
       target: "temporary-public-storage",
