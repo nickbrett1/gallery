@@ -25,7 +25,7 @@
     "@sveltejs/adapter-node": "^5.4.2",
     "@sveltejs/kit": "^2.70.3",
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
-    "@testing-library/jest-dom": "^6.6.0",
+    "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/svelte": "^5.2.0",
     "@vitest/coverage-v8": "^4.1.11",
     "jsdom": "^25.0.1",
