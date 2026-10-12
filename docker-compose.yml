@@ -26,10 +26,9 @@ services:
       INDEX_BACKEND: ${INDEX_BACKEND:-lancedb}
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-      - "homepage.group=Services"
-      - "homepage.name=gallery"
-      - "homepage.href=http://nas:3012/"
-      - "homepage.widget.type=customapi"
-      - "homepage.widget.url=http://localhost:3012/health"
-      - "homepage.widget.mappings[0].field=status"
-      - "homepage.widget.mappings[0].label=Status"
+      # Homepage: deliberately no `homepage.*` discovery labels. The fleet
+      # convention is a services.yaml card bound to the container
+      # (`server: local` + `container: gallery`), which also carries a
+      # siteMonitor and a widget — see deploy/homepage-services.yaml. Any
+      # `homepage.*` label here would make Homepage's Docker provider create a
+      # SECOND card for the same service.

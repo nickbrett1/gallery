@@ -93,9 +93,14 @@ will not be overwritten until you move the image back to `latest`.
 
 ## 5. Homepage dashboard
 
-Append `deploy/homepage-services.yaml` to your Homepage `services.yaml`
-(and enable the `homepage` Docker provider) to show a health widget for the
-service.
+The card in `deploy/homepage-services.yaml` binds the service to its container
+via the Docker provider (`server: local` + `container: gallery`) and adds a
+`siteMonitor` plus a `customapi` widget against `/health`. `settings.yaml`'s
+`layout:` already expects a `Services` group, so paste that block — a new
+`- Services:` group — where the layout orders it (after `Servers & Devices`,
+before `System & Monitoring`). The compose file intentionally carries no
+`homepage.*` discovery labels — a `services.yaml` card and a Docker-label card
+for the same container would both appear.
 
 ## 6. Networking notes
 
