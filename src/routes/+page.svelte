@@ -1,14 +1,92 @@
 <script>
-	let count = $state(0);
-
-	function increment() {
-		count += 1;
-	}
+  let { data } = $props();
+  const allKinds = [
+    { value: "text", label: "Text" },
+    { value: "concept", label: "Concepts" },
+    { value: "image", label: "Art" },
+  ];
 </script>
 
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+<h1>Search</h1>
+<p class="muted small">
+  One box, hybrid vector + keyword search over the corpus. Every result cites a page.
+</p>
 
-<button onclick={increment}>
-	Clicks: {count}
-</button>
+<form method="GET" action="/">
+  <div class="searchbar">
+    <input
+      type="search"
+      name="q"
+      value={data.q}
+      placeholder="e.g. the final boss's design sheet"
+    />
+    <button type="submit">Search</button>
+  </div>
+  <div class="filters">
+    <span>Kinds:</span>
+    {#each allKinds as k}
+      <label>
+        <input
+          type="checkbox"
+          name="kind"
+          value={k.value}
+          checked={!data.kinds || data.kinds.includes(k.value)}
+        />
+        {k.label}
+      </label>
+    {/each}
+    <label>
+      <input type="checkbox" name="mode" value="text" checked={data.mode === "text"} />
+      keyword only (skip embedding)
+    </label>
+  </div>
+</form>
+
+{#if data.error}
+  <div class="notice error">
+    <strong>Data unavailable.</strong> {data.error}
+    <div class="small">Check that GALLERY_DATA is mounted and the schema is pinned.</div>
+  </div>
+{/if}
+
+{#if data.grouped}
+  {#if data.grouped.works.length === 0 && data.grouped.concepts.length === 0 && data.grouped.images.length === 0}
+    <div class="notice">No results for “{data.q}”.</div>
+  {/if}
+
+  {#each data.grouped.works as work}
+    <h2>{work.title || work.workKey}</h2>
+    {#each work.hits as hit}
+      <article class="card">
+        <h3><a href={hit.href}>{hit.title || hit.workKey} — page {hit.pageNo}</a></h3>
+        <div class="cite">
+          {hit.workKey} · chars {hit.startOffset}–{hit.endOffset}
+          {#if hit.score != null}· score {Number(hit.score).toFixed(3)}{/if}
+        </div>
+        <p class="quote">{hit.text}</p>
+      </article>
+    {/each}
+  {/each}
+
+  {#if data.grouped.concepts.length}
+    <h2>Concepts</h2>
+    {#each data.grouped.concepts as c}
+      <article class="card">
+        <h3><a href={c.href}>{c.name}</a> <span class="pill">{c.type}</span></h3>
+        {#if c.description}<p class="muted">{c.description}</p>{/if}
+      </article>
+    {/each}
+  {/if}
+
+  {#if data.grouped.images.length}
+    <h2>Art</h2>
+    <div class="grid">
+      {#each data.grouped.images as img}
+        <a class="tile" href={img.href}>
+          <img src={`/thumb/${img.imageId}`} alt={`page ${img.pageNo} art`} loading="lazy" />
+          <div class="meta">page {img.pageNo} · {img.kindLabel}</div>
+        </a>
+      {/each}
+    </div>
+  {/if}
+{/if}

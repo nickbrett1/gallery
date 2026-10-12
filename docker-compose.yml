@@ -24,6 +24,7 @@ services:
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
       TURBOPUFFER_API_KEY: ${TURBOPUFFER_API_KEY}
       GALLERY_DATA: ${GALLERY_DATA:-/data}
+      INDEX_BACKEND: ${INDEX_BACKEND:-lancedb}
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
       - "homepage.group=Services"

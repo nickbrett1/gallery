@@ -1,5 +1,19 @@
 # gallery
 
+Serving surface for the `vg-books` pipeline (`reader` ingests; `gallery` reads).
+It opens the reader data dir **read-only** — SQLite (`reader.db`) as the record
+and the LanceDB index directory (`index/`) directly — embeds the user's query
+through the LiteLLM gateway with the same model/dimension `reader` pinned, and
+renders search, book browse, concept pages and an image gallery. It holds no
+ingestion code and never imports `reader`: the contract is data (the SQLite
+schema + the Lance table schema).
+
+- Screens: `/` search (hybrid vector + BM25, citations), `/books`, `/concepts`,
+  `/images`, plus `/health` for the container + Homepage widget.
+- Config: `GALLERY_DATA` (default `/data`) is the same volume `reader` writes;
+  `INDEX_BACKEND=lancedb` (default). `schema_version` and the Lance binding are
+  enforced at startup and failures are surfaced, not swallowed.
+
 A gallery project generated with genproj
 
 ## Capabilities
