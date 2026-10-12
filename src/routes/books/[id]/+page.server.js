@@ -10,10 +10,14 @@ export async function load({ params }) {
     const rt = await getRuntime();
     const book = rt.store.getBook(id);
     if (!book) throw error(404, "book not found");
+    const images = rt.store.imagesForBook(id);
     return {
       book,
       pages: rt.store.pagesForBook(id),
-      images: rt.store.imagesForBook(id),
+      images,
+      // Derived cover: the first image in reading order (imagesForBook is
+      // already ordered by page_no, id).
+      cover: images[0] ?? null,
       error: null,
     };
   } catch (err) {

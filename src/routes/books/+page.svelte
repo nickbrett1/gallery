@@ -15,11 +15,20 @@
   {/if}
   <table>
     <thead>
-      <tr><th>Title</th><th>Author</th><th>Format</th><th></th></tr>
+      <tr><th>Cover</th><th>Title</th><th>Author</th><th>Format</th><th></th></tr>
     </thead>
     <tbody>
-      {#each data.books as book}
+      {#each data.books as book (book.id)}
         <tr>
+          <td>
+            {#if book.cover}
+              <a href={`/books/${book.id}`} aria-label={`${book.title || book.work_key} cover`}>
+                <img class="cover" src={`/thumb/${book.cover.id}`} alt={`${book.title || book.work_key} cover`} loading="lazy" />
+              </a>
+            {:else}
+              <span class="cover placeholder" aria-label="no cover">?</span>
+            {/if}
+          </td>
           <td><a href={`/books/${book.id}`}>{book.title || book.work_key}</a></td>
           <td class="muted">{book.author || "—"}</td>
           <td><span class="pill">{book.format}</span></td>

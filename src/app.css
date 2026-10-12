@@ -186,6 +186,34 @@ button,
   color: var(--muted);
 }
 
+.cover {
+  display: block;
+  width: 46px;
+  height: 62px;
+  object-fit: cover;
+  border-radius: 5px;
+  border: 1px solid var(--line);
+  background: #0c0e12;
+}
+.cover.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+.cover-hero {
+  display: inline-block;
+  margin: 10px 0;
+}
+.cover-hero img {
+  display: block;
+  max-width: 190px;
+  max-height: 260px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #0c0e12;
+}
+
 .notice {
   padding: 12px 14px;
   border-radius: 10px;

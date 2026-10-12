@@ -4,8 +4,12 @@ import { getRuntime } from "$lib/server/runtime.js";
 export async function load() {
   try {
     const rt = await getRuntime();
+    // The cover is derived (first image in reading order) — no schema column.
+    const books = rt.store
+      .listBooks()
+      .map((b) => ({ ...b, cover: rt.store.coverForBook(b.id) }));
     return {
-      books: rt.store.listBooks(),
+      books,
       counts: rt.store.counts(),
       error: null,
     };

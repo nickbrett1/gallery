@@ -103,6 +103,21 @@ export class Store {
     ).all(bookId);
   }
 
+  /**
+   * The derived cover: the first image for a book in reading order
+   * (`page_no, id`). There is no cover column in the schema and none is
+   * invented — the cover is just the first image, or null when a work has none.
+   */
+  coverForBook(bookId) {
+    return (
+      this._q(
+        `SELECT id, sha256, w, h, mime, bytes, page_no, kind, caption,
+                (thumb IS NOT NULL) AS has_thumb
+           FROM image WHERE book_id = ? ORDER BY page_no, id LIMIT 1`,
+      ).get(bookId) || null
+    );
+  }
+
   // --- images --------------------------------------------------------------
 
   countImages() {
