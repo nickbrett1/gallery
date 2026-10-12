@@ -23,8 +23,8 @@ export function enrichRow(store, row) {
   const base = {
     indexId: row.id,
     kind,
-    score: row._score ?? null,
-    distance: row._distance ?? null,
+    score: row.score ?? null,
+    distance: row.distance ?? null,
   };
   if (kind === "text") {
     const chunk = store.getChunk(id);

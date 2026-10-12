@@ -125,8 +125,9 @@ export function makeFakeIndex(rowsByMode = {}) {
   };
 }
 
+// The typed shape `LanceIndex` returns (src/lib/server/index.js#shapeHit).
 export const sampleRows = [
-  { id: "text:1", kind: "text", text: "Wander enters", _score: 0.9, _distance: null },
-  { id: "concept:1", kind: "concept", text: "Wander", _score: 0.5, _distance: null },
-  { id: "image:1", kind: "image", text: null, _score: 0.3, _distance: null },
+  { id: "text:1", kind: "text", bookId: 1, pageId: 1, text: "Wander enters", score: 0.9, distance: null },
+  { id: "concept:1", kind: "concept", bookId: null, pageId: null, text: "Wander", score: 0.5, distance: null },
+  { id: "image:1", kind: "image", bookId: 1, pageId: 3, text: null, score: 0.3, distance: null },
 ];
