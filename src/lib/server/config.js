@@ -24,11 +24,10 @@ export function resolveConfig(env = process.env) {
     dbPath: env.GALLERY_DB || path.join(dataDir, "reader.db"),
     imagesDir: env.GALLERY_IMAGES || path.join(dataDir, "images"),
     indexDir: env.GALLERY_INDEX_DIR || path.join(dataDir, "index"),
-    // `local`/`lancedb` are the embedded default; `turbopuffer` is fallback-only.
+    // The embedded local index is the only backend gallery opens directly.
     indexBackend: (env.INDEX_BACKEND || "lancedb").toLowerCase(),
     litellmBaseUrl: trimUrl(env.LITELLM_BASE_URL || DEFAULT_GATEWAY_URL),
     litellmMasterKey: env.LITELLM_MASTER_KEY || null,
-    turbopufferApiKey: env.TURBOPUFFER_API_KEY || null,
     // Overrides exist only for tests / re-pins; the record is authoritative.
     embeddingModelOverride: env.GALLERY_EMBED_MODEL || null,
     embeddingDimensionsOverride: env.GALLERY_EMBED_DIMENSIONS

@@ -22,7 +22,6 @@ services:
       # (genproj never commits secrets). See .env.example.
       LITELLM_BASE_URL: ${LITELLM_BASE_URL:-http://nas:4000}
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
-      TURBOPUFFER_API_KEY: ${TURBOPUFFER_API_KEY}
       GALLERY_DATA: ${GALLERY_DATA:-/data}
       INDEX_BACKEND: ${INDEX_BACKEND:-lancedb}
     labels:

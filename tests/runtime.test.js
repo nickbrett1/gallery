@@ -39,9 +39,9 @@ describe("createRuntime startup guards", () => {
       createRuntime({
         dbPath: fx.dbPath,
         indexDir: `${fx.dir}/index`,
-        indexBackend: "turbopuffer",
+        indexBackend: "cloud",
       }),
-    ).rejects.toThrow(/INDEX_BACKEND=turbopuffer/);
+    ).rejects.toThrow(/INDEX_BACKEND=cloud/);
     fx.cleanup();
   });
 

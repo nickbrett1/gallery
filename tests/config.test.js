@@ -23,12 +23,12 @@ describe("resolveConfig", () => {
     const c = resolveConfig({
       GALLERY_DATA: "/data",
       GALLERY_DB: "/tmp/x.db",
-      INDEX_BACKEND: "Turbopuffer",
+      INDEX_BACKEND: "LanceDB",
       LITELLM_MASTER_KEY: "sk-1",
       GALLERY_EMBED_DIMENSIONS: "1536",
     });
     expect(c.dbPath).toBe("/tmp/x.db");
-    expect(c.indexBackend).toBe("turbopuffer");
+    expect(c.indexBackend).toBe("lancedb");
     expect(c.litellmMasterKey).toBe("sk-1");
     expect(c.embeddingDimensionsOverride).toBe(1536);
   });
