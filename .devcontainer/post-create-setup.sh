@@ -255,6 +255,9 @@ sudo chown -R "$CURRENT_USER:$CURRENT_USER" "$USER_HOME_DIR/.agy"
 
 echo "INFO: Setting up goose configuration and MCP servers..."
 
+# MCPHub runs on the ryzen tailnet host, not on the NAS container itself.
+MCPHUB_URI="${MCPHUB_URI:-http://ryzen.tail86fd19.ts.net:8781/mcp/dev}"
+
 CONFIG="$HOME/.config/goose/config.yaml"
 mkdir -p "$HOME/.config/goose"
 
@@ -262,12 +265,12 @@ mkdir -p "$HOME/.config/goose"
 # picks the subset the config is missing. A fragment starts at '  <key>:' —
 # exactly two spaces, the child indent under a top-level `extensions:`.
 MANAGED_BODY="$(mktemp)"
-cat > "$MANAGED_BODY" <<'GOOSECFGBODYEOF'
+cat > "$MANAGED_BODY" <<GOOSECFGBODYEOF
   mcphub-dev:
     type: streamable_http
     name: mcphub-dev
     enabled: true
-    uri: http://nas:8781/mcp/dev
+    uri: $MCPHUB_URI
     timeout: 300
 
   svelte:
@@ -281,13 +284,13 @@ GOOSECFGBODYEOF
 
 if [ ! -f "$CONFIG" ]; then
     echo "INFO: No goose config found - writing project goose config (extensions only; provider resolves from Doppler env at runtime)."
-    cat > "$CONFIG" <<'GOOSECFGEOF'
+    cat > "$CONFIG" <<GOOSECFGEOF
 extensions:
   mcphub-dev:
     type: streamable_http
     name: mcphub-dev
     enabled: true
-    uri: http://nas:8781/mcp/dev
+    uri: $MCPHUB_URI
     timeout: 300
 
   svelte:
