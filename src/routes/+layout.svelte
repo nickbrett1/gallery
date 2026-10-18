@@ -4,7 +4,10 @@
 </script>
 
 <header class="site-header">
-  <a class="brand" href="/">gallery</a>
+  <a class="brand" href="/">
+    <img src="/favicon.svg" alt="" class="brand-icon" width="22" height="22" />
+    <span>gallery</span>
+  </a>
   <nav>
     <a href="/">Search</a>
     <a href="/books">Books</a>

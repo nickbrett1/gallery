@@ -43,9 +43,24 @@ a:hover {
   z-index: 10;
 }
 .site-header .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--ink);
+}
+.site-header .brand:hover {
+  text-decoration: none;
+}
+.site-header .brand:hover span {
+  text-decoration: underline;
+}
+.site-header .brand-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  display: block;
 }
 .site-header nav {
   display: flex;
