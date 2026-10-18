@@ -1,4 +1,4 @@
-// Test fixtures: build a real schema-v2 SQLite record so the server libs are
+// Test fixtures: build a real schema-v3 SQLite record so the server libs are
 // exercised against the actual contract (never a hand-waved mock of it).
 
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
@@ -7,15 +7,21 @@ import path from "node:path";
 
 import Database from "better-sqlite3";
 
-// The reader schema (v1 + v2), trimmed to what gallery reads. Kept verbatim
-// enough to be a faithful contract check.
+// The reader schema (v1 + v2 + v3), trimmed to what gallery reads. Kept
+// verbatim enough to be a faithful contract check. v3 is additive: seven
+// checkpoint columns on `book`, a unique index on `concept_mention`, and the
+// `spend` table. Gallery reads none of them, but the fixture must match the
+// version it claims.
 const DDL = `
 CREATE TABLE schema_version (
   version INTEGER NOT NULL, applied_at TEXT NOT NULL,
   embedding_dimensions INTEGER, embedding_model TEXT, embed_config_version TEXT);
 CREATE TABLE book (
   id INTEGER PRIMARY KEY, work_key TEXT NOT NULL UNIQUE, title TEXT, author TEXT,
-  format TEXT NOT NULL, source_path TEXT NOT NULL, source_sha256 TEXT NOT NULL, added_at TEXT NOT NULL);
+  format TEXT NOT NULL, source_path TEXT NOT NULL, source_sha256 TEXT NOT NULL, added_at TEXT NOT NULL,
+  extracted_source_sha256 TEXT, extractor_version TEXT, extracted_at TEXT,
+  images_source_sha256 TEXT, images_extracted_at TEXT,
+  concepts_source_sha256 TEXT, concepts_extracted_at TEXT);
 CREATE TABLE document_page (
   id INTEGER PRIMARY KEY, book_id INTEGER NOT NULL, page_no INTEGER NOT NULL,
   text TEXT NOT NULL DEFAULT '', scanned INTEGER NOT NULL DEFAULT 0,
@@ -40,11 +46,16 @@ CREATE TABLE concept_surface (
 CREATE TABLE concept_mention (
   id INTEGER PRIMARY KEY, concept_id INTEGER NOT NULL, surface_id INTEGER NOT NULL,
   page_id INTEGER NOT NULL, start_offset INTEGER NOT NULL, end_offset INTEGER NOT NULL);
+CREATE UNIQUE INDEX uq_mention ON concept_mention (concept_id, page_id, start_offset, end_offset);
 CREATE TABLE concept_review (
   id INTEGER PRIMARY KEY, from_id INTEGER NOT NULL, to_id INTEGER NOT NULL,
   decision TEXT NOT NULL, decided_by TEXT NOT NULL, confidence REAL, decided_at TEXT NOT NULL);
 CREATE TABLE concept_merge (from_id INTEGER NOT NULL, to_id INTEGER NOT NULL, PRIMARY KEY (from_id, to_id));
 CREATE TABLE concept_resolution (concept_id INTEGER PRIMARY KEY, resolved_id INTEGER NOT NULL);
+CREATE TABLE spend (
+  id INTEGER PRIMARY KEY, run_id INTEGER, stage TEXT NOT NULL, kind TEXT NOT NULL,
+  model TEXT NOT NULL, items INTEGER NOT NULL, tokens INTEGER NOT NULL DEFAULT 0,
+  usd REAL NOT NULL DEFAULT 0, measured INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL);
 `;
 
 export function makeFixture() {
@@ -59,7 +70,7 @@ export function makeFixture() {
   db.exec(DDL);
   db.prepare(
     `INSERT INTO schema_version (version, applied_at, embedding_dimensions, embedding_model, embed_config_version)
-     VALUES (2, '2026-10-12', 2048, 'cohere/embed-v5.0', '1')`,
+     VALUES (3, '2026-10-13', 2048, 'cohere/embed-v5.0', '2')`,
   ).run();
   db.prepare(
     `INSERT INTO book (id, work_key, title, author, format, source_path, source_sha256, added_at)
@@ -72,7 +83,7 @@ export function makeFixture() {
   ).run(pageText);
   db.prepare(
     `INSERT INTO chunk (id, page_id, ordinal, start_offset, end_offset, text, embed_model_id, dimensions, embed_config_version, embedded_at)
-     VALUES (1, 1, 0, 0, ?, ?, 'cohere/embed-v5.0', 2048, '1', '2026-10-12')`,
+     VALUES (1, 1, 0, 0, ?, ?, 'cohere/embed-v5.0', 2048, '2', '2026-10-12')`,
   ).run(pageText.length, pageText);
   db.prepare(
     `INSERT INTO image (id, sha256, path, w, h, mime, bytes, book_id, page_no, kind, extractor_version, source_sha256, caption, thumb)

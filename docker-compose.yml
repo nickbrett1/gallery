@@ -16,7 +16,12 @@ services:
     ports:
       - "0.0.0.0:3012:3000"
     volumes:
-      - /volume1/homes/nick/vg-books:/data:ro
+      # NOT :ro — reader.db is in WAL mode. A read-only connection to a WAL
+      # database still has to create reader.db-shm / reader.db-wal in this
+      # directory, so a read-only mount makes SQLite fail the open with
+      # SQLITE_CANTOPEN ("unable to open database file"). Gallery itself opens
+      # the DB readonly with query_only=ON, so it never writes data.
+      - /volume1/homes/nick/vg-books:/data:rw
     environment:
       # Set your environment variables here or in a NAS-side .env file
       # (genproj never commits secrets). See .env.example.

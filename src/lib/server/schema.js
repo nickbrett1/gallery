@@ -9,10 +9,10 @@
 // reader. It reads the SQLite record and the Lance index directory directly.
 
 /** Version of the SQLite schema gallery was built against. */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 /** Version of the embedding configuration stamped onto every vector row. */
-export const EMBED_CONFIG_VERSION = "1";
+export const EMBED_CONFIG_VERSION = "2";
 
 /** The single Lance table (one namespace, a `kind` column). */
 export const CHUNKS_NAMESPACE = "chunks";
