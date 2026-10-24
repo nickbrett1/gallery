@@ -10,8 +10,9 @@ schema + the Lance table schema).
 
 - Screens: `/` search (hybrid vector + BM25, citations), `/books`, `/concepts`,
   `/images`, `/plate/[id]` (one image, its best quote, and the plates nearest it
-  in the embedding space; `/plate` drifts to a random one), plus `/health` for
-  the container + Homepage widget.
+  in the embedding space; `/plate` drifts to a random one), `/wall` (a
+  keyset-paged contact sheet grouped by work), plus `/health` for the
+  container + Homepage widget.
 - Config: `GALLERY_DATA` (default `/data`) is the same volume `reader` writes;
   `INDEX_BACKEND=lancedb` (default). `schema_version` and the Lance binding are
   enforced at startup and failures are surfaced, not swallowed.

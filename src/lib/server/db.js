@@ -48,6 +48,25 @@ export function checkSchema(db) {
   return info;
 }
 
+const WALL_ORDER = `ORDER BY book_id, page_no, id`;
+
+/**
+ * A wall cursor is the last row of the previous page: `<book>:<page>:<id>`.
+ * Keyset paging needs all three because the reading order is the triple.
+ */
+export function parseWallCursor(value) {
+  if (value == null || value === "") return null;
+  const m = /^(\d+):(\d+):(\d+)$/.exec(String(value));
+  if (!m) {
+    throw new TypeError(`wall cursor must look like <book>:<page>:<id>, got ${JSON.stringify(value)}`);
+  }
+  return { bookId: Number(m[1]), pageNo: Number(m[2]), id: Number(m[3]) };
+}
+
+export function formatWallCursor(row) {
+  return `${row.book_id}:${row.page_no ?? 0}:${row.id}`;
+}
+
 /** Read-only view over the record. One prepared statement per access pattern. */
 export class Store {
   constructor(dbPath) {
@@ -174,6 +193,49 @@ export class Store {
               (thumb IS NOT NULL) AS has_thumb
          FROM image WHERE id IN (${marks})`,
     ).all(...list);
+  }
+
+  /**
+   * One keyset page of the Wall (contact sheet), in reading order
+   * (`book_id, page_no, id`).
+   *
+   * Keyset, not OFFSET: `OFFSET n` walks the table on every scroll. The caller
+   * pages by passing back the cursor of the last row it was given.
+   */
+  wallPage({ bookId = null, cursor = null, limit = 120 } = {}) {
+    const cols = `id, book_id, sha256, w, h, mime, bytes, page_no, kind, caption,
+                  (thumb IS NOT NULL) AS has_thumb`;
+    const after = parseWallCursor(cursor);
+    let rows;
+    if (bookId != null) {
+      if (after) {
+        rows = this._q(
+          `SELECT ${cols} FROM image
+            WHERE book_id = ? AND (page_no > ? OR (page_no = ? AND id > ?))
+            ${WALL_ORDER} LIMIT ?`,
+        ).all(bookId, after.pageNo, after.pageNo, after.id, limit + 1);
+      } else {
+        rows = this._q(
+          `SELECT ${cols} FROM image WHERE book_id = ? ${WALL_ORDER} LIMIT ?`,
+        ).all(bookId, limit + 1);
+      }
+    } else if (after) {
+      rows = this._q(
+        `SELECT ${cols} FROM image
+          WHERE book_id > ?
+             OR (book_id = ? AND (page_no > ? OR (page_no = ? AND id > ?)))
+          ${WALL_ORDER} LIMIT ?`,
+      ).all(after.bookId, after.bookId, after.pageNo, after.pageNo, after.id, limit + 1);
+    } else {
+      rows = this._q(`SELECT ${cols} FROM image ${WALL_ORDER} LIMIT ?`).all(limit + 1);
+    }
+    const hasMore = rows.length > limit;
+    const page = hasMore ? rows.slice(0, limit) : rows;
+    return {
+      images: page,
+      hasMore,
+      nextCursor: hasMore && page.length ? formatWallCursor(page[page.length - 1]) : null,
+    };
   }
 
   /** One image id at random — the Plate's "drift" entry. */

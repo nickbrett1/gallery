@@ -14,6 +14,7 @@
     <a href="/concepts">Concepts</a>
     <a href="/images">Images</a>
     <a href="/plate">Plate</a>
+    <a href="/wall">Wall</a>
   </nav>
 </header>
 
