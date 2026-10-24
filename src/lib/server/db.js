@@ -299,6 +299,34 @@ export class Store {
     ).all(conceptId, limit);
   }
 
+  /**
+   * Neighbours for the Constellation: co-occurrence with a count, not just a
+   * DISTINCT list. `shared_pages` is the edge weight — it is the only relation
+   * the record actually holds, so the UI calls it "appears with".
+   */
+  conceptNeighbours(conceptId, limit = 12) {
+    return this._q(
+      `SELECT c.id, c.name, c.type,
+              COUNT(DISTINCT m2.page_id) AS shared_pages,
+              (SELECT COUNT(*) FROM concept_mention x WHERE x.concept_id = c.id) AS mentions
+         FROM concept_mention m1
+         JOIN concept_mention m2
+           ON m2.page_id = m1.page_id AND m2.concept_id != m1.concept_id
+         JOIN concept c ON c.id = m2.concept_id
+        WHERE m1.concept_id = ?
+        GROUP BY c.id
+        ORDER BY shared_pages DESC, mentions DESC, c.name
+        LIMIT ?`,
+    ).all(conceptId, limit);
+  }
+
+  /** How often a concept is mentioned (the centre node's size). */
+  conceptMentions(conceptId) {
+    return this._q(
+      `SELECT COUNT(*) AS n FROM concept_mention WHERE concept_id = ?`,
+    ).get(conceptId).n;
+  }
+
   listConcepts({ limit = 200, offset = 0 } = {}) {
     return this._q(
       `SELECT c.id, c.name, c.type,

@@ -9,6 +9,7 @@
 {#if data.concept.description}
   <p>{data.concept.description}</p>
 {/if}
+<p class="small"><a href={`/constellation/${data.concept.id}`}>constellation →</a></p>
 
 <h2>Surface forms</h2>
 <p>
