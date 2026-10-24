@@ -34,6 +34,9 @@ const HYBRID_COLUMNS = BASE_COLUMNS;
 const VECTOR_COLUMNS = [...BASE_COLUMNS, "_distance"];
 const FTS_COLUMNS = [...BASE_COLUMNS, "_score"];
 
+/** Index row ids are `<kind>:<record id>` — the only shape `getVector` accepts. */
+const INDEX_ID_RE = /^(text|concept|image):\d+$/;
+
 const require = createRequire(import.meta.url);
 
 /**
@@ -154,5 +157,39 @@ export class LanceIndex {
   async textSearch({ text, kinds, topK = 30 } = {}) {
     let q = applyKinds(this.table.query().fullTextSearch(text, { columns: "text" }), kinds);
     return shapeRows(await q.select(FTS_COLUMNS).limit(topK).toArray());
+  }
+
+  /**
+   * The stored embedding for one index row, or null when the row is missing.
+   *
+   * This is what makes "more art like this" possible: image rows carry no text,
+   * so a nearby-image search needs the plate's own vector rather than a query
+   * string. Deliberately a filtered scan, NOT the hybrid builder — 0.40.0
+   * rejects `_distance`/`_score` in `.select()` on hybrid queries, and a plain
+   * scan is a different code path (see the module header).
+   */
+  async getVector(id) {
+    const key = String(id);
+    if (!INDEX_ID_RE.test(key)) {
+      throw new TypeError(
+        `index row id must look like <kind>:<id> (e.g. "image:275"), got ${JSON.stringify(key)}`,
+      );
+    }
+    const rows = await this.table
+      .query()
+      .where(`id = ${sqlString(key)}`)
+      .select(["vector"])
+      .limit(1)
+      .toArray();
+    const vector = rows?.[0]?.vector ?? null;
+    if (!vector) return null;
+    if (this.dimensions && vector.length !== this.dimensions) {
+      // A wrong-width vector silently poisons every downstream search.
+      throw new IndexVersionError(
+        `index row ${key} has ${vector.length}-dimensional vector but the record pins ` +
+          `${this.dimensions}; the index was built with a different embedding config`,
+      );
+    }
+    return Array.from(vector);
   }
 }

@@ -88,4 +88,15 @@ await attempt("LanceIndex.hybridSearch  (kinds=text,concept)", () => index.hybri
 await attempt("LanceIndex.vectorSearch  (kinds=image)", () => index.vectorSearch({ vector: vec(4), kinds: ["image"], topK: 10 }));
 await attempt("LanceIndex.textSearch    (kinds=text)", () => index.textSearch({ text: "colossus", kinds: ["text"], topK: 10 }));
 
+console.log("\n-- a row's own vector (the Plate screen's primitive) --");
+await attempt("LanceIndex.getVector     (image:1)", async () => {
+  const v = await index.getVector("image:1");
+  console.log(v ? `       ${v.length} dims, first=${v[0].toFixed(4)}` : "       null");
+  return v ? [{ id: "image:1", kind: "image", vector_length: v.length }] : [];
+});
+await attempt("vectorSearch from own vector (kinds=image)", async () => {
+  const own = await index.getVector("image:1");
+  return index.vectorSearch({ vector: own, kinds: ["image"], topK: 5 });
+});
+
 if (tmp) rmSync(tmp, { recursive: true, force: true });

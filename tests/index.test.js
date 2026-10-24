@@ -113,6 +113,57 @@ describe("single-branch searches", () => {
   });
 });
 
+describe("getVector (a row's own embedding)", () => {
+  const VEC = new Float32Array([0.1, 0.2, 0.3]);
+  /** A 3-dimensional index, so the fixture vectors are honestly sized. */
+  function indexVec(rows, dimensions = 3) {
+    const table = fakeTable(rows);
+    return { idx: new LanceIndex(table, { dimensions }), table };
+  }
+
+  it("returns the stored vector as plain numbers", async () => {
+    const { idx } = indexVec([{ vector: VEC }]);
+    const out = await idx.getVector("image:275");
+    expect(out).toEqual([expect.closeTo(0.1, 5), expect.closeTo(0.2, 5), expect.closeTo(0.3, 5)]);
+    expect(Array.isArray(out)).toBe(true);
+  });
+
+  it("filters on the exact quoted id and selects only the vector column", async () => {
+    const { idx, table } = indexVec([{ vector: VEC }]);
+    await idx.getVector("image:275");
+    expect(table.calls[0].where).toBe("id = 'image:275'");
+    expect(table.calls[0].select).toEqual(["vector"]);
+    expect(table.calls[0].limit).toBe(1);
+  });
+
+  it("does not route through the hybrid builder (regression guard: .select(_distance) trap)", async () => {
+    const { idx, table } = indexVec([{ vector: VEC }]);
+    await idx.getVector("image:275");
+    expect(table.calls[0].nearestTo).toBeNull();
+    expect(table.calls[0].fullText).toBeNull();
+    expect(table.calls[0].rerank).toBeNull();
+  });
+
+  it("returns null for a missing row", async () => {
+    const { idx } = indexVec([]);
+    expect(await idx.getVector("image:999")).toBeNull();
+  });
+
+  it("rejects a malformed or injection-shaped id before querying", async () => {
+    const { idx, table } = indexVec([{ vector: VEC }]);
+    for (const bad of ["275", "image:", "image:abc", "image:1' OR '1'='1", ""]) {
+      await expect(idx.getVector(bad)).rejects.toThrow(TypeError);
+    }
+    expect(table.calls).toHaveLength(0);
+  });
+
+  it("fails loudly when the vector width disagrees with the pinned dimensions", async () => {
+    const table = fakeTable([{ vector: new Float32Array([1, 2]) }]);
+    const idx = new LanceIndex(table, { dimensions: 2048 });
+    await expect(idx.getVector("image:1")).rejects.toThrow(IndexVersionError);
+  });
+});
+
 describe("binding version pin", () => {
   it("reads the installed @lancedb/lancedb version (0.40.0)", () => {
     expect(bindingVersion()).toBe("0.40.0");
