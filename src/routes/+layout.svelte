@@ -13,6 +13,7 @@
     <a href="/books">Books</a>
     <a href="/concepts">Concepts</a>
     <a href="/images">Images</a>
+    <a href="/plate">Plate</a>
   </nav>
 </header>
 

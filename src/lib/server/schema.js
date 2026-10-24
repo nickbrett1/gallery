@@ -8,8 +8,14 @@
 // The contract between the two repos is DATA, not code: gallery never imports
 // reader. It reads the SQLite record and the Lance index directory directly.
 
-/** Version of the SQLite schema gallery was built against. */
-export const SCHEMA_VERSION = 3;
+/**
+ * Version of the SQLite schema gallery was built against.
+ *
+ * v3: book checkpoints, `uq_mention`, `spend`.
+ * v4: the quote layer — `quote`, `quote_concept`, `quote_review` + indexes.
+ * v5: `quote_page` extraction checkpoints (the per-page index is `idx_quote_page`).
+ */
+export const SCHEMA_VERSION = 5;
 
 /** Version of the embedding configuration stamped onto every vector row. */
 export const EMBED_CONFIG_VERSION = "2";

@@ -6,6 +6,15 @@ import Database from "better-sqlite3";
 
 import { SCHEMA_VERSION, SchemaMismatchError } from "./schema.js";
 
+/**
+ * The score at which a quote stops being a candidate and starts being
+ * displayable. Calibrated against 91 human verdicts on the live corpus:
+ * score >= 0.94 gives ~92% precision (260 quotes); the Jev threshold of 0.69
+ * gives 303. Everything below this is a candidate pool, not a selection, and
+ * the UI must not present it as editorial choice.
+ */
+export const QUOTE_DISPLAY_SCORE = 0.69;
+
 export function openDb(dbPath) {
   const db = new Database(dbPath, { readonly: true, fileMustExist: true });
   db.pragma("query_only = ON");
@@ -155,6 +164,24 @@ export class Store {
     );
   }
 
+  /** Metadata for several images in one round trip (the Plate's strip). */
+  imagesByIds(ids) {
+    const list = (ids || []).filter((n) => Number.isInteger(n));
+    if (list.length === 0) return [];
+    const marks = list.map(() => "?").join(",");
+    return this._q(
+      `SELECT id, book_id, sha256, w, h, mime, bytes, page_no, kind, caption,
+              (thumb IS NOT NULL) AS has_thumb
+         FROM image WHERE id IN (${marks})`,
+    ).all(...list);
+  }
+
+  /** One image id at random — the Plate's "drift" entry. */
+  randomImageId() {
+    const row = this._q(`SELECT id FROM image ORDER BY RANDOM() LIMIT 1`).get();
+    return row ? row.id : null;
+  }
+
   // --- concepts ------------------------------------------------------------
 
   getConcept(id) {
@@ -230,6 +257,105 @@ export class Store {
            JOIN book b ON b.id = dp.book_id
           WHERE ch.id = ?`,
       ).get(id) || null
+    );
+  }
+
+  // --- quotes (schema v4/v5) -----------------------------------------------
+
+  /**
+   * Quotes on one page, strongest first.
+   *
+   * `quote` stores only `page_id` — page_no, book and work_key come from the
+   * joins, because the record does not duplicate them onto the quote row.
+   */
+  quotesForPage(pageId, { limit = 5, minScore = QUOTE_DISPLAY_SCORE } = {}) {
+    return this._q(
+      `SELECT q.id, q.page_id, q.start_offset, q.end_offset, q.text, q.score, q.kind,
+              q.rationale, q.extractor_version, q.model_id,
+              dp.page_no, dp.book_id, b.title, b.work_key
+         FROM quote q
+         JOIN document_page dp ON dp.id = q.page_id
+         JOIN book b ON b.id = dp.book_id
+        WHERE q.page_id = ? AND q.score >= ?
+        ORDER BY q.score DESC, q.id
+        LIMIT ?`,
+    ).all(pageId, minScore, limit);
+  }
+
+  /**
+   * The page an image sits on. `image` has no `page_id` column (only
+   * `book_id` + `page_no`), so the page is resolved through that pair.
+   */
+  pageForImage(imageId) {
+    return (
+      this._q(
+        `SELECT dp.id AS page_id, i.page_no, i.book_id
+           FROM image i
+           LEFT JOIN document_page dp
+             ON dp.book_id = i.book_id AND dp.page_no = i.page_no
+          WHERE i.id = ?`,
+      ).get(imageId) || null
+    );
+  }
+
+  /** Quotes on the page an image was extracted from ([] when it has no page). */
+  quotesForImage(imageId, opts = {}) {
+    const page = this.pageForImage(imageId);
+    if (!page || page.page_id == null) return [];
+    return this.quotesForPage(page.page_id, opts);
+  }
+
+  /** Quotes linked to a concept via `quote_concept`, strongest first. */
+  quotesForConcept(conceptId, { limit = 6, minScore = QUOTE_DISPLAY_SCORE } = {}) {
+    return this._q(
+      `SELECT q.id, q.page_id, q.start_offset, q.end_offset, q.text, q.score, q.kind,
+              q.rationale, qc.confidence,
+              dp.page_no, dp.book_id, b.title, b.work_key
+         FROM quote_concept qc
+         JOIN quote q ON q.id = qc.quote_id
+         JOIN document_page dp ON dp.id = q.page_id
+         JOIN book b ON b.id = dp.book_id
+        WHERE qc.concept_id = ? AND q.score >= ?
+        ORDER BY q.score DESC, q.id
+        LIMIT ?`,
+    ).all(conceptId, minScore, limit);
+  }
+
+  /** The concepts a quote was tagged with (the Plate's chips). */
+  quoteConcepts(quoteId) {
+    return this._q(
+      `SELECT c.id, c.name, c.type, qc.confidence
+         FROM quote_concept qc
+         JOIN concept c ON c.id = qc.concept_id
+        WHERE qc.quote_id = ?
+        ORDER BY qc.confidence DESC, c.name`,
+    ).all(quoteId);
+  }
+
+  /** Chips for several quotes in one query (`?` placeholders, no string splicing). */
+  conceptsForQuotes(quoteIds) {
+    if (!quoteIds || quoteIds.length === 0) return {};
+    const marks = quoteIds.map(() => "?").join(",");
+    const rows = this._q(
+      `SELECT qc.quote_id, c.id, c.name, c.type, qc.confidence
+         FROM quote_concept qc
+         JOIN concept c ON c.id = qc.concept_id
+        WHERE qc.quote_id IN (${marks})
+        ORDER BY qc.confidence DESC, c.name`,
+    ).all(...quoteIds);
+    const byQuote = {};
+    for (const { quote_id: qid, ...concept } of rows) {
+      (byQuote[qid] ??= []).push(concept);
+    }
+    return byQuote;
+  }
+
+  /** Has reader run the quote extractor over this page (v5 checkpoint)? */
+  quoteCheckpoint(pageId) {
+    return (
+      this._q(
+        `SELECT page_id, extractor_version, extracted_at FROM quote_page WHERE page_id = ?`,
+      ).get(pageId) || null
     );
   }
 
