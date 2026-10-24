@@ -27,12 +27,13 @@
   const centre = $derived(graph.nodes.find((n) => n.isCentre));
   const others = $derived(graph.nodes.filter((n) => !n.isCentre));
 
-  /** Percent coordinates, so the stage scales with its container. */
-  const pos = (n) => ({
-    left: `${(n.x / graph.width) * 100}%`,
-    top: `${(n.y / graph.height) * 100}%`,
-    "--d": `${n.r * 2}px`,
-  });
+  /**
+   * Percent coordinates, so the stage scales with its container. Must be a CSS
+   * string: a style object renders as "[object Object]" and drops every node on
+   * top of the centre.
+   */
+  const pos = (n) =>
+    `left:${(n.x / graph.width) * 100}%;top:${(n.y / graph.height) * 100}%;--d:${n.r * 2}px`;
 </script>
 
 <svelte:window onkeydown={onKeydown} />

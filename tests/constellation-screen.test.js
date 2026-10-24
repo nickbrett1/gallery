@@ -38,6 +38,15 @@ describe("constellation screen", () => {
     expect(screen.getByText(/no typed relations/i)).toBeInTheDocument();
   });
 
+  it("positions nodes with real CSS, not a coerced object", () => {
+    render(Page, { data: data() });
+    const links = screen.getAllByRole("link", { name: /Mono|Dormin/ });
+    for (const link of links) {
+      expect(link.getAttribute("style")).toMatch(/left:\s*[\d.]+%;\s*top:\s*[\d.]+%;\s*--d:\s*[\d.]+px/);
+      expect(link.getAttribute("style")).not.toContain("[object Object]");
+    }
+  });
+
   it("says a concept has no neighbours instead of drawing an empty canvas", () => {
     render(Page, { data: data([]) });
     expect(screen.getByText(/no neighbours yet/i)).toBeInTheDocument();
