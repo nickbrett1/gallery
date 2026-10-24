@@ -33,8 +33,9 @@ a:hover {
 
 .site-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 24px;
+  gap: 8px 24px;
   padding: 14px 22px;
   border-bottom: 1px solid var(--line);
   background: var(--panel);
@@ -64,7 +65,23 @@ a:hover {
 }
 .site-header nav {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  min-width: 0;
+}
+.site-header nav a {
+  white-space: nowrap;
+}
+/* Six links + brand do not fit on a phone: wrap rather than overflow. */
+@media (max-width: 560px) {
+  .site-header {
+    padding: 10px 14px;
+    gap: 4px 12px;
+  }
+  .site-header nav {
+    gap: 4px 12px;
+    font-size: 0.9rem;
+  }
 }
 main {
   max-width: 1100px;
