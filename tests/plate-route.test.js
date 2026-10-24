@@ -20,6 +20,7 @@ vi.mock("$lib/server/runtime.js", () => ({
 
 import { load as loadPlate } from "../src/routes/plate/[id]/+page.server.js";
 import { load as loadDrift } from "../src/routes/plate/+page.server.js";
+import { load as loadExplore } from "../src/routes/explore/+page.server.js";
 import { Store } from "../src/lib/server/db.js";
 import { makeFixture, makeFakeIndex } from "./fixtures.js";
 
@@ -116,6 +117,17 @@ describe("plate screen", () => {
     runtime();
     h.rt = new Error("SQLITE_CANTOPEN");
     await expect(loadPlate({ params: { id: "1" } })).rejects.toMatchObject({ status: 503 });
+  });
+});
+
+describe("explore landing", () => {
+  it("sends a visitor to a plate without touching the search screen", () => {
+    try {
+      loadExplore();
+      throw new Error("expected a redirect");
+    } catch (err) {
+      expect(err).toMatchObject({ status: 307, location: "/plate" });
+    }
   });
 });
 

@@ -14,8 +14,8 @@
 
 - Services:
     - gallery:
-        icon: mdi-bookshelf
-        href: http://nas:3012/
+        icon: mdi-palette
+        href: http://nas:3012/explore
         description: Video-game books — concepts, images, browse
         server: local
         container: gallery

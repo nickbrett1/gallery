@@ -1,5 +1,27 @@
 <script>
+  import { goto } from "$app/navigation";
+
   let { data } = $props();
+
+  let stage = $state(null);
+
+  /** ←/→ cycle focus through the ring; `d` drifts to a random neighbour. */
+  function onKeydown(event) {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    const links = [...(stage?.querySelectorAll("a.node") ?? [])];
+    if (links.length === 0) return;
+
+    if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+      event.preventDefault();
+      const step = event.key === "ArrowRight" ? 1 : -1;
+      const at = links.indexOf(document.activeElement);
+      const next = at === -1 ? (step > 0 ? 0 : links.length - 1) : (at + step + links.length) % links.length;
+      links[next].focus();
+    } else if (event.key === "d") {
+      event.preventDefault();
+      goto(`/constellation/${links[Math.floor(Math.random() * links.length)].dataset.id}`);
+    }
+  }
 
   const graph = $derived(data.graph);
   const centre = $derived(graph.nodes.find((n) => n.isCentre));
@@ -13,6 +35,8 @@
   });
 </script>
 
+<svelte:window onkeydown={onKeydown} />
+
 <h1>{data.concept.name}</h1>
 <p class="muted small">
   <span class="pill">{data.concept.type}</span>
@@ -20,7 +44,7 @@
   {#if data.concept.description}· {data.concept.description}{/if}
 </p>
 
-<div class="stage" style={`aspect-ratio:${graph.width}/${graph.height}`}>
+<div class="stage" bind:this={stage} style={`aspect-ratio:${graph.width}/${graph.height}`}>
   <svg class="edges" viewBox={`0 0 ${graph.width} ${graph.height}`} aria-hidden="true">
     {#each graph.edges as edge (edge.to)}
       {@const to = graph.nodes.find((n) => n.id === edge.to)}
@@ -43,16 +67,16 @@
         {#if node.portrait}
           <img src={node.portrait.src} alt="" loading="lazy" />
         {:else}
-          <span class="initials">{node.name.slice(0, 1)}</span>
+          <span class="initials" aria-hidden="true">{node.name.slice(0, 1)}</span>
         {/if}
         <span class="label">{node.name}</span>
       </div>
     {:else}
-      <a class="node" style={pos(node)} href={`/constellation/${node.id}`} title={`${node.name} · ${node.shared_pages} shared page(s)`}>
+      <a class="node" style={pos(node)} href={`/constellation/${node.id}`} data-id={node.id} title={`${node.name} · ${node.shared_pages} shared page(s)`}>
         {#if node.portrait}
           <img src={node.portrait.src} alt="" loading="lazy" />
         {:else}
-          <span class="initials">{node.name.slice(0, 1)}</span>
+          <span class="initials" aria-hidden="true">{node.name.slice(0, 1)}</span>
         {/if}
         <span class="label">{node.name}</span>
       </a>
@@ -67,8 +91,9 @@
     Edges mean <strong>appears with</strong>: co-occurrence on the same page, weighted by how
     many pages. The record holds no typed relations, so a weak edge looks weak.
   </p>
-  <p class="small"><a href={`/concepts/${data.concept.id}`}>all citations for {data.concept.name} →</a></p>
 {/if}
+
+<p class="small"><a href={`/concepts/${data.concept.id}`}>all citations for {data.concept.name} →</a></p>
 
 <style>
   .stage {
